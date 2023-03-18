@@ -291,7 +291,7 @@ func getChunkSizes(size int64) (chunks []chunkSize) {
 	for i := 1; size > 0; i++ {
 		var chunk int
 
-		chunk = 1
+		chunk = 1024
 
 		if size < int64(chunk) {
 			chunk = int(size)
