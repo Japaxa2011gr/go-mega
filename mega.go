@@ -1077,14 +1077,14 @@ func (d *Download) ChunkLocation(id int) (position int64, size int, err error) {
 
 // DownloadChunk gets a chunk with the given number and update the
 // mac, returning the position in the file of the chunk
-func (d *Download) DownloadChunk(id int) (chunk []byte, err error) {
+func (d *Download) DownloadChunk(id int) (chunk []byte, url string, err error) {
 	if id < 0 || id >= len(d.chunks) {
-		return nil, EARGS
+		return nil, "", EARGS
 	}
 
 	chk_start, chk_size, err := d.ChunkLocation(id)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var resp *http.Response
@@ -1104,39 +1104,39 @@ func (d *Download) DownloadChunk(id int) (chunk []byte, err error) {
 		backOffSleep(&sleepTime)
 	}
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if resp == nil {
-		return nil, errors.New("retries exceeded")
+		return nil, "", errors.New("retries exceeded")
 	}
 
 	chunk, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		_ = resp.Body.Close()
-		return nil, err
+		return nil, "", err
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// body is read and closed here
 
 	if len(chunk) != chk_size {
-		return nil, errors.New("wrong size for downloaded chunk")
+		return nil, "", errors.New("wrong size for downloaded chunk")
 	}
 
 	// Decrypt the block
 	ctr_iv, err := bytes_to_a32(d.src.meta.iv)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	ctr_iv[2] = uint32(uint64(chk_start) / 0x1000000000)
 	ctr_iv[3] = uint32(chk_start / 0x10)
 	bctr_iv, err := a32_to_bytes(ctr_iv)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	ctr_aes := cipher.NewCTR(d.aes_block, bctr_iv)
 	ctr_aes.XORKeyStream(chunk, chunk)
@@ -1157,7 +1157,7 @@ func (d *Download) DownloadChunk(id int) (chunk []byte, err error) {
 	}
 	d.mutex.Unlock()
 
-	return chunk, nil
+	return chunk, chunk_url, nil
 }
 
 // Finish checks the accumulated MAC for each block.
