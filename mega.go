@@ -1089,6 +1089,7 @@ func (d *Download) DownloadChunk(id int) (chunk []byte, err error) {
 
 	var resp *http.Response
 	chunk_url := fmt.Sprintf("%s/%d-%d", d.resourceUrl, chk_start, chk_start+int64(chk_size)-1)
+	fmt.Println(chunk_url)
 	sleepTime := minSleepTime // inital backoff time
 	for retry := 0; retry < d.m.retries+1; retry++ {
 		resp, err = d.m.client.Get(chunk_url)
