@@ -290,11 +290,9 @@ func getChunkSizes(size int64) (chunks []chunkSize) {
 	p := int64(0)
 	for i := 1; size > 0; i++ {
 		var chunk int
-		if i <= 8 {
-			chunk = i * 131072
-		} else {
-			chunk = 1048576
-		}
+
+		chunk = 1024
+
 		if size < int64(chunk) {
 			chunk = int(size)
 		}
